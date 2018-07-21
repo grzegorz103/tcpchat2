@@ -1,2 +1,1 @@
-# tcpchat2
-# tcpchat2
+Client server chat with message class based on builder pattern
