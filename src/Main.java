@@ -9,131 +9,131 @@ import java.util.Scanner;
 
 public class Main
 {
-    private String nick;
+        private String nick;
 
-    private final static String HOST = "localhost";
-    private final static int PORT = 1500;
+        private final static String HOST = "localhost";
+        private final static int PORT = 1500;
 
-    private ObjectOutputStream oos;
-    private ObjectInputStream ois;
-    private boolean validation = false;
+        private ObjectOutputStream oos;
+        private ObjectInputStream ois;
+        private boolean validation = false;
 
-    public static void main(String[] args) throws IOException, InterruptedException
-    {
-        Main main = new Main();
-        var socket = new Socket(HOST, PORT);
-
-        main.oos = new ObjectOutputStream(socket.getOutputStream());
-        main.oos.flush();
-        main.ois = new ObjectInputStream(socket.getInputStream());
-
-        main.startChat();
-    }
-
-    private void startChat() throws IOException, InterruptedException
-    {
-        new Thread(this::startListening).start();
-        validate();
-        start();
-    }
-
-    private void validate() throws IOException, InterruptedException
-    {
-        do
+        public static void main(String[] args) throws IOException, InterruptedException
         {
-            System.out.println("Enter your nick");
-            this.nick = new Scanner(System.in).nextLine();
+                Main main = new Main();
+                var socket = new Socket(HOST, PORT);
 
-            Message validateMsg = new Message.MessageBuilder()
-                    .validate()
-                    .sender(this.nick)
-                    .build();
-            this.oos.writeObject(validateMsg);
+                main.oos = new ObjectOutputStream(socket.getOutputStream());
+                main.oos.flush();
+                main.ois = new ObjectInputStream(socket.getInputStream());
 
-            Thread.sleep(500);
+                main.startChat();
+        }
 
-        } while (!validation);
-    }
-
-    private void startListening()
-    {
-
-        while (true)
+        private void startChat() throws IOException, InterruptedException
         {
-            try
-            {
-                Message msgReceived = (Message) this.ois.readObject();
+                new Thread(this::startListening).start();
+                validate();
+                start();
+        }
 
-                if (msgReceived.getNickAccepted())
+        private void validate() throws IOException, InterruptedException
+        {
+                do
                 {
-                    System.out.println(msgReceived.getMessage());
-                    this.validation = true;
-                } else if (msgReceived.getRecipient() == null && msgReceived.getFile() == null)
-                    System.out.println(msgReceived.getSender() + ": " + msgReceived.getMessage());
+                        System.out.println("Enter your nick");
+                        this.nick = new Scanner(System.in).nextLine();
 
-                else if (msgReceived.getRecipient() != null && !msgReceived.getNickAccepted() && msgReceived.getFile() == null)
-                    System.out.println("Message from: " + msgReceived.getSender() + ": " + msgReceived.getMessage());
+                        Message validateMsg = new Message.MessageBuilder()
+                                .validate()
+                                .sender(this.nick)
+                                .build();
+                        this.oos.writeObject(validateMsg);
 
-                else if (msgReceived.getFile() != null)
-                    receiveFile(msgReceived.getMessage(), msgReceived.getFile());
-            } catch (IOException | ClassNotFoundException e)
-            {
-                e.printStackTrace();
-                break;
-            }
+                        Thread.sleep(500);
+
+                } while (!validation);
         }
-    }
 
-    private byte[] getFile(String filepath) throws IOException
-    {
-        return Files.readAllBytes(Paths.get(filepath));
-    }
-
-    private void receiveFile(String name, byte... file) throws IOException
-    {
-        try (FileOutputStream fos = new FileOutputStream("_" + name))
+        private void startListening()
         {
-            fos.write(file);
+
+                while (true)
+                {
+                        try
+                        {
+                                Message msgReceived = (Message) this.ois.readObject();
+
+                                if (msgReceived.getNickAccepted())
+                                {
+                                        System.out.println(msgReceived.getMessage());
+                                        this.validation = true;
+                                } else if (msgReceived.getRecipient() == null && msgReceived.getFile() == null)
+                                        System.out.println(msgReceived.getSender() + ": " + msgReceived.getMessage());
+
+                                else if (msgReceived.getRecipient() != null && !msgReceived.getNickAccepted() && msgReceived.getFile() == null)
+                                        System.out.println("Message from: " + msgReceived.getSender() + ": " + msgReceived.getMessage());
+
+                                else if (msgReceived.getFile() != null)
+                                        receiveFile(msgReceived.getMessage(), msgReceived.getFile());
+                        } catch (IOException | ClassNotFoundException e)
+                        {
+                                e.printStackTrace();
+                                break;
+                        }
+                }
         }
-        System.out.println("File has been received");
-    }
 
-    private void start() throws IOException
-    {
-        System.out.println("Welcome " + this.nick);
-
-        while (true)
+        private byte[] getFile(String filepath) throws IOException
         {
-            var line = new Scanner(System.in).nextLine();
-
-            if (line.equals("#exit"))
-            {
-                quit();
-                break;
-            }
-
-            Message.MessageBuilder msg = new Message.MessageBuilder()
-                    .sender(this.nick);
-
-            if (line.split(": ").length == 2)
-            {
-                msg.message(line.split(": ")[1])
-                        .recipient(line.split(": ")[0]);
-            } else if (line.split(": ").length == 3)
-            {
-                msg.recipient(line.split(": ")[0])
-                        .message(line.split(": ")[2])
-                        .file(this.getFile(line.split(": ")[2]));
-            } else
-                msg.message(line);
-
-            Message msgToSend = msg.build();
-            this.oos.writeObject(msgToSend);
+                return Files.readAllBytes(Paths.get(filepath));
         }
-    }
 
-    private void quit()
-    {
-        System.exit(0);
-    }
+        private void receiveFile(String name, byte... file) throws IOException
+        {
+                try (FileOutputStream fos = new FileOutputStream("_" + name))
+                {
+                        fos.write(file);
+                }
+                System.out.println("File has been received");
+        }
+
+        private void start() throws IOException
+        {
+                System.out.println("Welcome " + this.nick);
+
+                while (true)
+                {
+                        var line = new Scanner(System.in).nextLine();
+
+                        if (line.equals("#exit"))
+                        {
+                                quit();
+                                break;
+                        }
+
+                        Message.MessageBuilder msg = new Message.MessageBuilder()
+                                .sender(this.nick);
+
+                        if (line.split(": ").length == 2)
+                        {
+                                msg.message(line.split(": ")[1])
+                                        .recipient(line.split(": ")[0]);
+                        } else if (line.split(": ").length == 3)
+                        {
+                                msg.recipient(line.split(": ")[0])
+                                        .message(line.split(": ")[2])
+                                        .file(this.getFile(line.split(": ")[2]));
+                        } else
+                                msg.message(line);
+
+                        Message msgToSend = msg.build();
+                        this.oos.writeObject(msgToSend);
+                }
+        }
+
+        private void quit()
+        {
+                System.exit(0);
+        }
 }
